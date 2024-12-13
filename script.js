@@ -22,21 +22,46 @@ const resetBtn = document.getElementById('reset-btn');
 // Inicializar votos, de color por cada color vas a hacer, que los votos por ese color empiezan desde 0
 colors.forEach(color => colorVotes[color] = 0);
 
+colors.forEach(color => {
+    if (sounds[color]) {
+        sounds[color].preload = 'auto';
+    }
+});
+
+
 // Crear botones de colores
 colors.forEach(color => {
-    const btn = document.createElement('button'); //Creamos un botón.
-    btn.className = 'color-btn';//Le asignamos una clase CSS.
-    btn.style.backgroundColor = color;//Le damos un color de fondo. dependiendo del color elegido del array
-    btn.addEventListener('mouseover', () => selectColor(color));//
-    colorPalette.appendChild(btn);//Lo añadimos al contenedor en la página.
+    const btn = document.createElement('button'); 
+    btn.className = 'color-btn';
+    btn.style.backgroundColor = color;
+    btn.addEventListener('mouseover', () => {
+        if (sounds[color]) {
+            sounds[color].play().catch(error => {
+                console.error(`Error al reproducir sonido de ${color}:`, error);
+            });
+        }
+    });
+    // Añadir eventos separados para mouseover y click
+    btn.addEventListener('mouseover', () => hoverColor(color));
+    btn.addEventListener('click', () => selectColor(color));
+    
+    colorPalette.appendChild(btn);
 });
+
+// Nueva función para manejar el hover
+function hoverColor(color) {
+    // Reproducir sonido solo al pasar el ratón
+    if (sounds[color]) {
+        // Detener cualquier sonido que esté reproduciéndose
+        Object.values(sounds).forEach(sound => sound.pause());
+        sounds[color].currentTime = 0; // Reiniciar al principio
+        sounds[color].play();
+    }
+}
 
 function selectColor(color) {
     // Cambiar color del título
     partyTitle.style.color = color;
-
-    // Reproducir sonido
-    if (sounds[color]) sounds[color].play();
 
     // Cambiar color de la pista de baile
     danceFloor.style.backgroundColor = color;
@@ -48,6 +73,9 @@ function selectColor(color) {
     // Reiniciar temporizador de inactividad
     resetInactivityTimer();
 }
+
+// Modificar el botón de reset para que sea un click
+resetBtn.addEventListener('click', resetParty);
 
 function updateVoteDisplay() {
     const mostPopularColor = Object.keys(colorVotes).reduce((a, b) => //objet.keys Este método obtiene un array con todas las claves (colores) del objeto colorVotes.
@@ -88,15 +116,16 @@ function resetInactivityTimer() {
 function resetParty() {
     partyTitle.style.color = 'black';
     danceFloor.style.backgroundColor = 'transparent';
-
-    // Reiniciar votos
+ // Reiniciar votos
+    colors.forEach(color => colorVotes[color] = 0);
     updateVoteDisplay();
-
+    
     // Reiniciar temporizador
     resetInactivityTimer();
+    
 }
 
-resetBtn.addEventListener('click', resetParty);
+resetBtn.addEventListener('mouseover', resetParty);
 
 // Iniciar primer temporizador de inactividad
 resetInactivityTimer();
